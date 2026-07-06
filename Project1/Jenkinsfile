@@ -25,7 +25,6 @@ pipeline {
         stage('3. Build Hardened Image') {
             steps {
                 echo "Compiling multi-stage Docker image: ${IMAGE_NAME}..."
-                // Wrapped inside dir('Project1') so docker build executes inside the right folder
                 dir('Project1') {
                     sh "docker build -t ${IMAGE_NAME} ."
                 }
@@ -34,9 +33,17 @@ pipeline {
 
         stage('4. Security & Health Audits') {
             steps {
+                echo 'Preparing validation sandbox environment...'
+                
+                // PRE-BUILD CLEANUP: Force drops any old container with the same name 
+                // from previous runs to prevent "Name already in use" exit code 128 conflicts.
+                sh "docker stop ${CONTAINER_NAME} || true"
+                sh "docker rm ${CONTAINER_NAME} || true"
+
                 echo 'Spinning up the container sandbox for validation tests...'
                 sh "docker run -d -p 8000:8000 --name ${CONTAINER_NAME} ${IMAGE_NAME}"
                 
+                // Telemetry grace period
                 sleep time: 10, unit: 'SECONDS'
 
                 script {
@@ -49,9 +56,11 @@ pipeline {
                         
                         echo '✅ All infrastructure validations passed successfully!'
                     } finally {
-                        echo 'Cleaning up the testing sandbox...'
-                        sh "docker stop ${CONTAINER_NAME} || true"
-                        sh "docker rm ${CONTAINER_NAME} || true"
+                        // POST-BUILD CLEANUP BYPASS: Commented out deliberately so the 
+                        // verified container stays live on the host control plane for interview inspections.
+                        echo 'Skipping post-build sandbox cleanup for live CLI verification...'
+                        // sh "docker stop ${CONTAINER_NAME} || true"
+                        // sh "docker rm ${CONTAINER_NAME} || true"
                     }
                 }
             }
