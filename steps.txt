@@ -1,0 +1,54 @@
+======================================================================
+OPERATIONAL RUNBOOK: HARDENED PYTHON CONTAINER LIFECYCLE
+======================================================================
+
+PHASE 1: APPLICATION BUILD ROUTINE
+----------------------------------------------------------------------
+Command to compile, optimize layers, and build the hardened image:
+
+  docker build -t hardened-python-hello .
+
+* Note: Watch for '[cached]' flags on re-runs to verify layer efficiency.
+
+
+PHASE 2: SECURE LAUNCH ROUTINE
+----------------------------------------------------------------------
+Command to instantiate the isolated container in detached mode:
+
+  docker run -d -p 8000:8000 --name secure-app-instance hardened-python-hello
+
+* Note: Using '-d' keeps the terminal free for immediate audits.
+
+
+PHASE 3: ENTERPRISE AUDIT & VERIFICATION MANIFEST
+----------------------------------------------------------------------
+Execute these checks sequentially to validate security assertions:
+
+1. COMPLIANCE AUDIT (Verify Unprivileged User Boundary):
+   docker exec -it secure-app-instance whoami
+   => Verification Goal: Must return 'appuser' (Not root)
+
+2. FOOTPRINT AUDIT (Verify Surface Minimization):
+   docker images hardened-python-hello
+   => Verification Goal: Must measure ~50MB - 60MB
+
+3. TELEMETRY AUDIT (Verify Orchestration Health Probe):
+   docker ps --filter name=secure-app-instance
+   => Verification Goal: Status must transition to '(healthy)' within 10-15s
+
+4. LOG TRANSMISSION AUDIT (Verify Stateless Real-Time Streams):
+   docker logs secure-app-instance
+   => Verification Goal: Instant, unbuffered stdout prints visible
+
+
+PHASE 4: TEARDOWN & LIFECYCLE ROUTINE
+----------------------------------------------------------------------
+Commands to test sub-second graceful termination and system cleanup:
+
+1. TIME CONTAINER SHUTDOWN (Verify Tini PID 1 Signal Forwarding):
+   time docker stop secure-app-instance
+   => Verification Goal: Must exit instantly under ~0.5s
+
+2. ENVIRONMENT CLEANUP:
+   docker rm secure-app-instance
+======================================================================
