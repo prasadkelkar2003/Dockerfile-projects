@@ -25,4 +25,22 @@ A masterclass in cloud-native systems engineering. This project takes a standard
 * `requirements.txt`: Strict package manifest pinning explicit version trees to eliminate upstream supply chain drift.
 
 ---
+# Imp steps to be known:
+
+1] cat /var/lib/jenkins/secrets/initialAdminPassword
+
+2] add jenkins in Docker group : ` vi /etc/group ` and after that `docker:jenkins` , after that `systemctl restart jenkins`
+
+# Jenkins values 
+1]Triggers = GitHub hook trigger for GITScm polling
+
+2]Definition = Pipeline script from SCM
+
+3]Repository URL = https://github.com/prasadkelkar2003/Dockerfile-projects.git
+
+4]Branch Specifier = */main
+
+5]Script Path = Project1/Jenkinsfile
+
+
 
