@@ -17,8 +17,6 @@ pipeline {
             steps {
                 echo "Checking if ${IMAGE_NAME}:${IMAGE_TAG} already exists..."
                 script {
-                    // Inspects the image; if it exists (returns exit code 0), it deletes it.
-                    // The '|| true' ensures the pipeline doesn't crash if the image isn't found on the first run.
                     sh """
                         if docker image inspect ${IMAGE_NAME}:${IMAGE_TAG} >/dev/null 2>&1; then
                             echo "Old image found. Removing to prevent conflicts..."
@@ -34,7 +32,8 @@ pipeline {
         stage('Build Optimized Image') {
             steps {
                 echo "Executing Multi-Stage Build for ${IMAGE_NAME}:${IMAGE_TAG}..."
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                // Fixed: Tells Docker to look inside the Project2 subfolder for both the Dockerfile and code context
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f Project2/Dockerfile Project2/"
             }
         }
 
@@ -54,9 +53,11 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up intermediate transient build cache and dangling layers...'
-            // Crucial step: -f forces cleanup of any untagged/dangling images left behind
-            sh 'docker image prune -f'
+            // Fixed: Wrapped in a node block to guarantee it runs smoothly even if early stages fail
+            node {
+                echo 'Cleaning up intermediate transient build cache and dangling layers...'
+                sh 'docker image prune -f'
+            }
         }
     }
 }
