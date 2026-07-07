@@ -32,7 +32,6 @@ pipeline {
         stage('Build Optimized Image') {
             steps {
                 echo "Executing Multi-Stage Build for ${IMAGE_NAME}:${IMAGE_TAG}..."
-                // Fixed: Tells Docker to look inside the Project2 subfolder for both the Dockerfile and code context
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f Project2/Dockerfile Project2/"
             }
         }
@@ -53,8 +52,7 @@ pipeline {
 
     post {
         always {
-            // Fixed: Wrapped in a node block to guarantee it runs smoothly even if early stages fail
-            node {
+            script {
                 echo 'Cleaning up intermediate transient build cache and dangling layers...'
                 sh 'docker image prune -f'
             }
