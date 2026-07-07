@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'my-go-service'
+        IMAGE_TAG  = 'optimized'
+    }
+
+    stages {
+        stage('Checkout Source') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Cleanup Existing Image') {
+            steps {
+                echo "Checking if ${IMAGE_NAME}:${IMAGE_TAG} already exists..."
+                script {
+                    // Inspects the image; if it exists (returns exit code 0), it deletes it.
+                    // The '|| true' ensures the pipeline doesn't crash if the image isn't found on the first run.
+                    sh """
+                        if docker image inspect ${IMAGE_NAME}:${IMAGE_TAG} >/dev/null 2>&1; then
+                            echo "Old image found. Removing to prevent conflicts..."
+                            docker rmi -f ${IMAGE_NAME}:${IMAGE_TAG}
+                        else
+                            echo "No conflicting image found. Proceeding cleanly."
+                        fi
+                    """
+                }
+            }
+        }
+
+        stage('Build Optimized Image') {
+            steps {
+                echo "Executing Multi-Stage Build for ${IMAGE_NAME}:${IMAGE_TAG}..."
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+            }
+        }
+
+        stage('Verify Size Metric') {
+            steps {
+                echo 'Checking final container footprint...'
+                script {
+                    def imageSize = sh(script: "docker images --format '{{.Size}}' ${IMAGE_NAME}:${IMAGE_TAG}", returnStdout: true).trim()
+                    echo "====================================================="
+                    echo " SUCCESS: Enterprise Build Completed."
+                    echo " Target Image Production Size: ${imageSize}"
+                    echo "====================================================="
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up intermediate transient build cache and dangling layers...'
+            // Crucial step: -f forces cleanup of any untagged/dangling images left behind
+            sh 'docker image prune -f'
+        }
+    }
+}
