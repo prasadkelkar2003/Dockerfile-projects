@@ -1,0 +1,9 @@
+if we want to run the container run this command : 
+docker run -d -p 8081:8080 --name my-running-service my-go-service:optimized
+
+
+if want to compare:
+1] install the image golang on system: docker pull golang:1.22
+
+2] docker images: docker images
+
